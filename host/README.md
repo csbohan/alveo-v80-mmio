@@ -53,3 +53,7 @@ cat /opt/amd/aved/amd_v80_gen5x8_*_xbtest_*/xbtest/metadata/*.json
 ```
 
 Look for "nominal bar", "offset", or "layout" of xbtest IP in PCIe BAR. That offset is what you pass as the third argument to the script or C example.
+
+## PCA-comp MMIO (test_12x2)
+
+For the PCA-comp design with MMIO bridge (from this repo’s `sbt "runMain pca.PCACompWithMMIO"`), see **[pca_mmio_regs.md](pca_mmio_regs.md)** for the register map and host flow. Use the same AMI pattern as `mmio_example.c` with base offset pointing at the PCA-comp block in your BAR.
