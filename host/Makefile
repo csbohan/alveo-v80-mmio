@@ -1,29 +1,43 @@
 # Build mmio_example for Alveo V80 (AVED/AMI) on the node.
-# AMI is typically under /opt/amd. Adjust AMI_INSTALL if your RPM installs elsewhere.
+# AMI is often under /opt/amd/aved/<design>/api/include and api/lib (not /opt/amd/include).
 
 CC     = gcc
 CFLAGS = -Wall -O2
 
-# Default: AMI under /opt/amd (e.g. aved install or RPM)
-# Override: make AMI_INSTALL=/usr  or  make AMI_INC=/path/to/ami/include AMI_LIB=/path/to/ami/lib
+# Auto-detect ami.h under /opt/amd (AVED often uses .../api/include/ami.h)
+AMI_H      := $(shell find /opt/amd -name 'ami.h' 2>/dev/null | head -1)
 AMI_INSTALL ?= /opt/amd
-AMI_INC     ?= $(AMI_INSTALL)/include
-AMI_LIB     ?= $(AMI_INSTALL)/lib
+AMI_INC    ?= $(if $(AMI_H),$(dir $(AMI_H)),$(AMI_INSTALL)/include)
+AMI_LIB    ?= $(if $(AMI_H),$(patsubst %/include,%/lib,$(dir $(AMI_H))),$(AMI_INSTALL)/lib)
 
-# If your AVED package uses a versioned subdir, set it, e.g.:
-# AMI_INSTALL = /opt/amd/aved/amd_v80_gen5x8_23.2_exdes_2_xbtest_stress
-# and ensure include/ and lib/ exist under it, or add -I/opt/amd/aved/.../api/include -L.../api/lib
+# Override if auto-detect is wrong: make AMI_INC=/path/to/include AMI_LIB=/path/to/lib
+# Or set a specific AVED design: make AMI_INSTALL=/opt/amd/aved/amd_v80_gen5x8_xxx_exdes_2_xbtest_stress
+# (ensure that path has api/include and api/lib underneath)
 
 CFLAGS += -I$(AMI_INC)
 LDFLAGS = -L$(AMI_LIB) -lami -Wl,-rpath,$(AMI_LIB)
 
 TARGET = mmio_example
 
-.PHONY: all clean
+.PHONY: all clean find-ami
+
+# Run "make find-ami" on the node to see where AMI headers/libs are (or set AMI_INC/AMI_LIB manually)
+find-ami:
+	@echo "Looking for ami.h under /opt/amd..."
+	@F=$$(find /opt/amd -name 'ami.h' 2>/dev/null | head -1); \
+	if [ -n "$$F" ]; then \
+	  echo "  ami.h: $$F"; \
+	  echo "  AMI_INC=$$(dirname $$F)"; \
+	  echo "  AMI_LIB=$$(dirname $$(dirname $$F))/lib"; \
+	  echo "  Build with: make"; \
+	else \
+	  echo "  ami.h not found. Install AVED/AMI or set: make AMI_INC=/path/to/include AMI_LIB=/path/to/lib"; \
+	fi
 
 all: $(TARGET)
 
 $(TARGET): mmio_example.c
+	@echo "Using AMI_INC=$(AMI_INC) AMI_LIB=$(AMI_LIB)"
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 clean:
