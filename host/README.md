@@ -36,10 +36,16 @@ sudo ./mmio_example 21:00.0
 sudo ./mmio_example 21 0 0x1000
 ```
 
-If `ami.h` is not found, set `AMI_INC` to the directory that contains the AMI API headers, and `AMI_LIB` to the directory containing `libami.so`:
+If `ami.h` is not found (e.g. `/opt/amd/include` is empty), AMI is often under a versioned AVED path. On the node run:
 
 ```bash
-make AMI_INC=/path/to/ami/include AMI_LIB=/path/to/ami/lib
+make find-ami
+```
+
+That prints where `ami.h` was found and the `AMI_INC`/`AMI_LIB` to use. Then run `make` again (the Makefile now auto-detects under `/opt/amd`). To override manually:
+
+```bash
+make AMI_INC=/path/to/include AMI_LIB=/path/to/lib
 ```
 
 ## Finding BAR offset (pre-built xbtest design)
